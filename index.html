@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Photoshop-like Gradient Editor → CSS</title>
+<style>
+  :root{
+    --bg:#1e1e1e; --panel:#2b2b2b; --muted:#8b8b8b; --accent:#00baff;
+  }
+  *{box-sizing:border-box;font-family:Inter,Segoe UI,system-ui,Arial}
+  body{margin:0;background:var(--bg);color:#eee;padding:28px;display:flex;justify-content:center}
+  .card{width:980px;background:var(--panel);padding:18px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  h1{margin:0 0 10px;font-weight:600;color:var(--accent)}
+  .row{display:flex;gap:14px}
+  .col{flex:1}
+  .controls{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  select,input[type=number],input[type=range],button{width:100%;padding:8px;border-radius:6px;border:none;background:#3a3a3a;color:#fff}
+  .small{padding:6px;font-size:13px}
+  .strip-wrap{background:#333;padding:12px;border-radius:8px;border:1px solid #444}
+  .gradient-strip{
+    height:36px;border-radius:6px;position:relative;overflow:visible;border:1px solid rgba(0,0,0,.6);
+    cursor:crosshair;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.6);
+  }
+  .stop{
+    position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:22px;border-radius:3px;
+    border:2px solid #000;box-shadow:0 2px 4px rgba(0,0,0,.6);cursor:pointer;
+  }
+  .stop .nub{position:absolute;left:50%;transform:translateX(-50%);bottom:-8px;width:2px;height:8px;background:#ddd}
+  .stop.selected{outline:2px solid var(--accent);box-shadow:0 4px 8px rgba(0,0,0,.6)}
+  .controls-right{display:flex;flex-direction:column;gap:10px}
+  .preview{height:220px;border-radius:8px;border:1px solid #444;overflow:hidden;position:relative}
+  .preview .layer-sample{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#222;font-weight:700}
+  .css-output{background:#0f0f0f;padding:10px;border-radius:6px;margin-top:8px;font-family:monospace;color:#7fffd4;white-space:pre-wrap}
+  .btn{background:var(--accent);color:#000;padding:8px 12px;border-radius:6px;border:none;font-weight:700;cursor:pointer}
+  .inline{display:flex;gap:10px;align-items:center}
+  .midpoint{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.3);pointer-events:none}
+  .meta{font-size:12px;color:var(--muted);margin-top:6px}
+  .toolbar{display:flex;gap:8px;align-items:center}
+  .small-input{width:90px}
+  .strip-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
+  .stops-list{display:flex;gap:8px;flex-wrap:wrap}
+  .stop-chip{background:#333;padding:6px;border-radius:6px;color:#ddd;font-size:13px}
+  .delete{text-decoration:none;color:#ff8080;margin-left:8px;cursor:pointer}
+  .dither-overlay{pointer-events:none;position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.015) 1px, transparent 1px);opacity:.6;mix-blend-mode:soft-light}
+  /* responsive small */
+  @media (max-width:980px){ .card{width:100%} .controls{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<div class="card" role="application" aria-label="Gradient editor">
+  <h1>Gradient Overlay — Photoshop-style Editor</h1>
+
+  <div class="row" style="align-items:flex-start">
+    <!-- LEFT: controls + strip -->
+    <div class="col" style="margin-right:12px">
+
+      <div class="controls">
+        <div>
+          <label>Blend Mode</label>
+          <select id="blendMode">
+            <!-- Photoshop list; some map weirdly to CSS but we export the raw name -->
+            <option>Normal</option><option>Dissolve</option>
+            <option>Darken</option><option>Multiply</option><option>Color Burn</option>
+            <option>Linear Burn</option><option>Darker Color</option>
+            <option>Lighten</option><option>Screen</option><option>Color Dodge</option>
+            <option>Linear Dodge (Add)</option><option>Lighter Color</option>
+            <option>Overlay</option><option>Soft Light</option><option>Hard Light</option>
+            <option>Vivid Light</option><option>Linear Light</option><option>Pin Light</option>
+            <option>Hard Mix</option><option>Difference</option><option>Exclusion</option>
+            <option>Subtract</option><option>Divide</option>
+            <option>Hue</option><option>Saturation</option><option>Color</option><option>Luminosity</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Opacity (%)</label>
+          <input id="globalOpacity" type="range" min="0" max="100" value="100">
+        </div>
+
+        <div>
+          <label>Style</label>
+          <select id="style">
+            <option value="linear">Linear</option>
+            <option value="radial">Radial</option>
+            <option value="angle">Angle (conic)</option>
+            <option value="reflected">Reflected</option>
+            <option value="diamond">Diamond</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Angle (°)</label>
+          <input id="angle" type="number" value="-90">
+        </div>
+
+        <div>
+          <label>Scale (%)</label>
+          <input id="scale" type="range" min="0" max="200" value="100">
+        </div>
+
+        <div class="inline">
+          <label><input id="reverse" type="checkbox"> Reverse</label>
+          <label><input id="dither" type="checkbox"> Dither</label>
+          <label><input id="align" type="checkbox" checked> Align with Layer</label>
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <!-- gradient strip -->
+      <div class="strip-wrap">
+        <div id="strip" class="gradient-strip" title="Click to add a stop"></div>
+        <div class="strip-legend">
+          <div id="legendLeft">0%</div>
+          <div id="legendRight">100%</div>
+        </div>
+        <div class="meta">Tip: Click strip to add stop • Drag stops to reposition • Select a stop to edit color/alpha/pos</div>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="stops-list" id="stopsList" aria-live="polite"></div>
+
+    </div>
+
+    <!-- RIGHT: preview + selected stop editor -->
+    <div class="col" style="max-width:420px">
+      <label>Preview</label>
+      <div class="preview" id="previewWrap">
+        <div id="preview" class="layer-sample">Sample</div>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div style="background:#292929;padding:12px;border-radius:8px">
+        <label>Selected Stop</label>
+        <div id="selectedPanel">
+          <div class="inline" style="margin-bottom:8px">
+            <input id="stopColor" type="color" value="#ffffff">
+            <input id="stopAlpha" type="range" min="0" max="100" value="100" style="flex:1">
+          </div>
+          <div class="inline" style="gap:8px">
+            <label style="min-width:60px">Position (%)</label>
+            <input id="stopPos" type="number" class="small-input" min="0" max="100" value="0">
+            <button id="deleteStop" class="btn" style="background:#ff6b6b">Delete</button>
+          </div>
+
+          <div style="height:10px"></div>
+          <div class="meta">Alpha acts like Photoshop's opacity stop. For separate opacity stops you can set alpha per stop.</div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div style="display:flex;gap:8px;align-items:center">
+          <button id="copyBtn" class="btn">Copy CSS</button>
+          <button id="resetBtn" class="btn" style="background:#6b6b6b">Reset</button>
+        </div>
+
+        <div id="cssCode" class="css-output" aria-live="polite"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/*
+Photoshop-like gradient editor:
+- stops: array of {id,color:#rrggbb,alpha:0..1,pos:0..100}
+- add stop by clicking strip
+- drag stop horizontally to change pos
+- select stop -> edit controls (color, alpha, pos, delete)
+- generate CSS using rgba() color stops and percentages
+- supports style toggles
+*/
+
+const strip = document.getElementById('strip');
+const preview = document.getElementById('preview');
+const cssCode = document.getElementById('cssCode');
+const stopsList = document.getElementById('stopsList');
+
+const stopColor = document.getElementById('stopColor');
+const stopAlpha = document.getElementById('stopAlpha');
+const stopPos = document.getElementById('stopPos');
+const deleteStop = document.getElementById('deleteStop');
+
+const blendMode = document.getElementById('blendMode');
+const globalOpacity = document.getElementById('globalOpacity');
+const styleSel = document.getElementById('style');
+const angleInput = document.getElementById('angle');
+const scaleInput = document.getElementById('scale');
+const reverseCB = document.getElementById('reverse');
+const ditherCB = document.getElementById('dither');
+
+const copyBtn = document.getElementById('copyBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let stops = [];
+let selectedId = null;
+let dragState = null;
+
+// utility
+const uid = () => Math.random().toString(36).slice(2,9);
+
+// add initial two stops (white to black)
+function initDefault(){
+  stops = [
+    {id:uid(), color:'#ffffff', alpha:1, pos:0},
+    {id:uid(), color:'#000000', alpha:1, pos:100}
+  ];
+  selectedId = stops[0].id;
+  renderAll();
+}
+initDefault();
+
+function renderAll(){
+  renderStrip();
+  renderStopsList();
+  renderSelectedPanel();
+  updatePreview();
+  updateCSS();
+}
+
+function renderStrip(){
+  // build CSS gradient string from stops (sorted)
+  const st = [...stops].sort((a,b)=>a.pos-b.pos);
+  // reverse handling
+  const rev = reverseCB.checked;
+  const stopsForCss = rev ? st.slice().reverse() : st;
+  const cssStops = stopsForCss.map(s => rgbaStr(s) + ' ' + s.pos + '%').join(', ');
+
+  // style types mapping
+  const style = styleSel.value;
+  let bg = '';
+  const angle = parseFloat(angleInput.value) || 0;
+  const scale = parseFloat(scaleInput.value) || 100;
+
+  switch(style){
+    case 'linear':
+      bg = `linear-gradient(${angle}deg, ${cssStops})`;
+      break;
+    case 'radial':
+      bg = `radial-gradient(circle ${scale}%, ${cssStops})`;
+      break;
+    case 'angle':
+      bg = `conic-gradient(from ${angle}deg, ${cssStops})`;
+      break;
+    case 'reflected':
+      // approximate reflected by repeating
+      const rep = cssStops + ', ' + cssStops;
+      bg = `linear-gradient(${angle}deg, ${rep})`;
+      break;
+    case 'diamond':
+      bg = `radial-gradient(closest-side at center, ${cssStops})`;
+      break;
+  }
+
+  strip.style.background = bg;
+  // remove all existing .stop elements
+  strip.querySelectorAll('.stop').forEach(n=>n.remove());
+
+  // create stop handles
+  st.forEach(s=>{
+    const el = document.createElement('div');
+    el.className = 'stop';
+    el.dataset.id = s.id;
+    el.style.left = s.pos+'%';
+    el.title = s.color + ' @ ' + s.pos + '%';
+    el.style.background = rgbaStr(s);
+    if(s.id === selectedId) el.classList.add('selected');
+    const nub = document.createElement('div'); nub.className = 'nub';
+    el.appendChild(nub);
+    // mouse events
+    el.addEventListener('pointerdown', startDrag);
+    el.addEventListener('click', (e)=>{ e.stopPropagation(); selectStop(s.id); });
+    strip.appendChild(el);
+  });
+
+  // show dither overlay if checked (visual only)
+  strip.querySelectorAll('.dither-overlay').forEach(n=>n.remove());
+  if(ditherCB.checked){
+    const d = document.createElement('div');
+    d.className = 'dither-overlay';
+    strip.appendChild(d);
+  }
+}
+
+function rgbaStr(s){
+  // ensure color HEX -> r,g,b
+  const hex = s.color.replace('#','');
+  const r = parseInt(hex.substring(0,2),16);
+  const g = parseInt(hex.substring(2,4),16);
+  const b = parseInt(hex.substring(4,6),16);
+  return `rgba(${r},${g},${b},${+s.alpha.toFixed(3)})`;
+}
+
+function startDrag(e){
+  e.preventDefault();
+  const handle = e.currentTarget;
+  const id = handle.dataset.id;
+  dragState = {id, startX:e.clientX};
+  handle.setPointerCapture(e.pointerId);
+
+  // listen move on document for robust dragging
+  const onMove = (ev) => {
+    const rect = strip.getBoundingClientRect();
+    const x = ev.clientX - rect.left;
+    let pct = (x / rect.width) * 100;
+    if(pct < 0) pct = 0; if(pct > 100) pct = 100;
+    // update stop pos
+    const s = stops.find(st=>st.id === id);
+    if(s){ s.pos = +pct.toFixed(1); renderAll(); }
+  };
+  const onUp = (ev) => {
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    dragState = null;
+  };
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+}
+
+strip.addEventListener('click', (e)=>{
+  // add new stop at click pos
+  const rect = strip.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  let pct = (x / rect.width) * 100;
+  if(pct < 0) pct = 0; if(pct > 100) pct = 100;
+  // create new stop with sampled color between nearest neighbors (lerp)
+  const newStop = {id:uid(), color:'#ffffff', alpha:1, pos:+pct.toFixed(1)};
+  // pick color by interpolating nearest stops
+  const sorted = [...stops].sort((a,b)=>a.pos-b.pos);
+  let left = sorted[0], right = sorted[sorted.length-1];
+  for(let i=0;i<sorted.length-1;i++){
+    if(pct >= sorted[i].pos && pct <= sorted[i+1].pos){ left=sorted[i]; right=sorted[i+1]; break; }
+  }
+  const t = (pct - left.pos) / Math.max(1, right.pos - left.pos);
+  const interp = lerpColor(left.color, right.color, t);
+  newStop.color = interp;
+  newStop.alpha = +(left.alpha + (right.alpha - left.alpha) * t).toFixed(3);
+  stops.push(newStop);
+  selectedId = newStop.id;
+  renderAll();
+});
+
+function lerpColor(a,b,t){
+  const ax = hexToRgb(a), bx = hexToRgb(b);
+  const r = Math.round(ax.r + (bx.r-ax.r)*t);
+  const g = Math.round(ax.g + (bx.g-ax.g)*t);
+  const bl = Math.round(ax.b + (bx.b-ax.b)*t);
+  return rgbToHex(r,g,bl);
+}
+function hexToRgb(hex){ hex = hex.replace('#',''); return {r:parseInt(hex.slice(0,2),16), g:parseInt(hex.slice(2,4),16), b:parseInt(hex.slice(4,6),16)}; }
+function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+
+// selection management
+function selectStop(id){
+  selectedId = id;
+  renderAll();
+}
+
+function renderStopsList(){
+  stopsList.innerHTML = '';
+  const sorted = [...stops].sort((a,b)=>a.pos-b.pos);
+  sorted.forEach(s=>{
+    const chip = document.createElement('div');
+    chip.className = 'stop-chip';
+    chip.innerHTML = `<strong style="color:${s.color}">${s.color.toUpperCase()}</strong> &nbsp; ${s.pos}% 
+      <span style="color:#aaa">α=${Math.round(s.alpha*100)}%</span>
+      <a class="delete" data-id="${s.id}">×</a>`;
+    chip.querySelector('.delete')?.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      removeStop(s.id);
+    });
+    chip.addEventListener('click', ()=>{ selectStop(s.id); });
+    stopsList.appendChild(chip);
+  });
+}
+
+function removeStop(id){
+  if(stops.length <= 2){ alert('At least two stops required'); return; }
+  stops = stops.filter(s=>s.id !== id);
+  if(selectedId === id) selectedId = stops[0].id;
+  renderAll();
+}
+
+// selected panel binding
+function renderSelectedPanel(){
+  const s = stops.find(x=>x.id === selectedId);
+  if(!s){
+    // hide panel
+    stopColor.disabled=true; stopAlpha.disabled=true; stopPos.disabled=true; deleteStop.disabled=true;
+    return;
+  }
+  stopColor.disabled=false; stopAlpha.disabled=false; stopPos.disabled=false; deleteStop.disabled=false;
+  stopColor.value = s.color;
+  stopAlpha.value = Math.round(s.alpha*100);
+  stopPos.value = Math.round(s.pos);
+}
+
+stopColor.addEventListener('input', (e)=>{
+  const s = stops.find(x=>x.id===selectedId); if(!s) return;
+  s.color = e.target.value; renderAll();
+});
+stopAlpha.addEventListener('input', (e)=>{
+  const s = stops.find(x=>x.id===selectedId); if(!s) return;
+  s.alpha = +(e.target.value/100).toFixed(3); renderAll();
+});
+stopPos.addEventListener('input', (e)=>{
+  let v = +e.target.value;
+  if(v<0) v=0; if(v>100) v=100;
+  const s = stops.find(x=>x.id===selectedId); if(!s) return;
+  s.pos = +v; renderAll();
+});
+deleteStop.addEventListener('click', ()=>{
+  if(!selectedId) return;
+  removeStop(selectedId);
+});
+
+// global control bindings
+[blendMode, globalOpacity, styleSel, angleInput, scaleInput, reverseCB, ditherCB].forEach(el=>{
+  el.addEventListener('input', ()=>{ renderAll(); });
+});
+copyBtn.addEventListener('click', copyCSS);
+resetBtn.addEventListener('click', initDefault);
+
+// update preview
+function updatePreview(){
+  // preview layering: show example background for blend modes; we will set preview background to gradient
+  const st = [...stops].sort((a,b)=>a.pos-b.pos);
+  const rev = reverseCB.checked; 
+  const style = styleSel.value;
+  const cssStops = (rev ? st.slice().reverse() : st).map(s => rgbaStr(s) + ' ' + s.pos + '%').join(', ');
+  const angle = parseFloat(angleInput.value) || 0;
+  const scale = parseFloat(scaleInput.value) || 100;
+  let bg = '';
+
+  switch(style){
+    case 'linear': bg = `linear-gradient(${angle}deg, ${cssStops})`; break;
+    case 'radial': bg = `radial-gradient(circle ${scale}%, ${cssStops})`; break;
+    case 'angle': bg = `conic-gradient(from ${angle}deg, ${cssStops})`; break;
+    case 'reflected': bg = `linear-gradient(${angle}deg, ${cssStops}, ${cssStops})`; break;
+    case 'diamond': bg = `radial-gradient(closest-side at center, ${cssStops})`; break;
+  }
+
+  preview.style.background = bg;
+  preview.style.opacity = (globalOpacity.value/100).toFixed(3);
+
+  // blend mode simulation: we'll set mix-blend-mode on an overlay (browser supports many)
+  // we can't map every PS blend exactly; we'll set raw from dropdown (lowercased)
+  const bm = blendMode.value.toLowerCase();
+  preview.style.mixBlendMode = cssBlendMap(bm);
+  // optionally overlay dither in preview
+  preview.querySelectorAll('.dither-overlay').forEach(n=>n.remove());
+  if(ditherCB.checked){
+    const d = document.createElement('div');
+    d.className = 'dither-overlay';
+    preview.appendChild(d);
+  }
+}
+
+function cssBlendMap(bm){
+  // map some PS names to standard CSS mix-blend-mode where possible
+  const maps = {
+    'normal':'normal','multiply':'multiply','screen':'screen','overlay':'overlay','darken':'darken',
+    'lighten':'lighten','color-dodge':'','color dodge':'','soft light':'soft-light','hard light':'hard-light',
+    'difference':'difference','exclusion':'exclusion','hue':'hue','saturation':'saturation','color':'color','luminosity':'luminosity'
+  };
+  // try best effort: if contains space replace with hyphen
+  const key = bm.replace(/\s+/g,'-');
+  return maps[key] || key;
+}
+
+// generate CSS code
+function updateCSS(){
+  const st = [...stops].sort((a,b)=>a.pos-b.pos);
+  const rev = reverseCB.checked;
+  const style = styleSel.value;
+  const angle = parseFloat(angleInput.value)||0;
+  const scale = parseFloat(scaleInput.value)||100;
+
+  const stopsForCss = rev ? st.slice().reverse() : st;
+  const cssStops = stopsForCss.map(s => `${rgbaStr(s)} ${s.pos}%`).join(', ');
+
+  let gradientDecl = '';
+  switch(style){
+    case 'linear': gradientDecl = `linear-gradient(${angle}deg, ${cssStops})`; break;
+    case 'radial': gradientDecl = `radial-gradient(circle ${scale}%, ${cssStops})`; break;
+    case 'angle': gradientDecl = `conic-gradient(from ${angle}deg, ${cssStops})`; break;
+    case 'reflected': gradientDecl = `linear-gradient(${angle}deg, ${cssStops}, ${cssStops})`; break;
+    case 'diamond': gradientDecl = `radial-gradient(closest-side at center, ${cssStops})`; break;
+  }
+
+  const bm = blendMode.value.toLowerCase();
+  const mix = cssBlendMap(bm);
+  const op = (globalOpacity.value/100).toFixed(3);
+  const css = `/* Generated CSS (approx. to Photoshop Gradient Overlay) */
+background: ${gradientDecl};
+mix-blend-mode: ${mix};
+opacity: ${op};`;
+
+  cssCode.textContent = css;
+}
+
+function copyCSS(){
+  navigator.clipboard.writeText(cssCode.textContent).then(()=>alert('CSS copied to clipboard'));
+}
+
+// helper events to re-render list & preview when stops change
+function renderAndKeepSelection(){
+  renderAll();
+}
+
+// whenever stops array changes we call this
+// initial wiring: whenever stops mutated we already call renderAll()
+
+// small UX: if selected stop removed or not set, select first
+if(!selectedId && stops.length) selectedId = stops[0].id;
+renderAll();
+
+</script>
+</body>
+</html>
