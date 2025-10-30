@@ -3,524 +3,842 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Photoshop-like Gradient Editor → CSS</title>
+<title>Css Gradient Generator Same As Photoshop</title>
 <style>
   :root{
-    --bg:#1e1e1e; --panel:#2b2b2b; --muted:#8b8b8b; --accent:#00baff;
+    --bg:#0f1113;
+    --panel:#17191b;
+    --muted:#9aa3ab;
+    --accent:#22c1ff;
+    --accent-2:#7af5c7;
+    --card:#121416;
+    --chip:#202427;
   }
-  *{box-sizing:border-box;font-family:Inter,Segoe UI,system-ui,Arial}
-  body{margin:0;background:var(--bg);color:#eee;padding:28px;display:flex;justify-content:center}
-  .card{width:980px;background:var(--panel);padding:18px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.6)}
-  h1{margin:0 0 10px;font-weight:600;color:var(--accent)}
-  .row{display:flex;gap:14px}
-  .col{flex:1}
+  *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial}
+  body{margin:0;background:linear-gradient(180deg,#0b0c0d,#0f1113);color:#e6eef3;padding:20px;display:flex;justify-content:center}
+  .app{width:1120px;background:linear-gradient(180deg,var(--panel),#151718);border-radius:12px;padding:18px;box-shadow:0 10px 40px rgba(2,6,12,.7);border:1px solid rgba(255,255,255,.02)}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  h1{margin:0;font-size:18px;color:var(--accent)}
+  .layout{display:grid;grid-template-columns:1fr 420px;gap:18px}
+  .panel{background:var(--card);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.02)}
   .controls{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
-  label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
-  select,input[type=number],input[type=range],button{width:100%;padding:8px;border-radius:6px;border:none;background:#3a3a3a;color:#fff}
-  .small{padding:6px;font-size:13px}
-  .strip-wrap{background:#333;padding:12px;border-radius:8px;border:1px solid #444}
-  .gradient-strip{
-    height:36px;border-radius:6px;position:relative;overflow:visible;border:1px solid rgba(0,0,0,.6);
-    cursor:crosshair;
-    box-shadow: inset 0 -1px 0 rgba(0,0,0,.6);
-  }
-  .stop{
-    position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:22px;border-radius:3px;
-    border:2px solid #000;box-shadow:0 2px 4px rgba(0,0,0,.6);cursor:pointer;
-  }
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
+  select,input[type=number],input[type=range],button{width:100%;padding:8px;border-radius:8px;border:none;background:#101315;color:#e6eef3;font-size:13px}
+  input[type=color]{width:44px;height:36px;border-radius:8px;border:none;padding:0}
+  .row{display:flex;gap:8px;align-items:center}
+  .small{width:84px}
+  .rail{background:#0e1112;border-radius:8px;padding:10px;border:1px solid rgba(255,255,255,.02);margin-bottom:10px}
+  .strip{height:44px;border-radius:8px;position:relative;overflow:visible;border:1px solid rgba(255,255,255,.03);cursor:crosshair}
+  .stop{position:absolute;top:50%;transform:translate(-50%,-50%);width:16px;height:24px;border-radius:4px;border:2px solid #000;box-shadow:0 6px 12px rgba(0,0,0,.6);cursor:pointer}
   .stop .nub{position:absolute;left:50%;transform:translateX(-50%);bottom:-8px;width:2px;height:8px;background:#ddd}
-  .stop.selected{outline:2px solid var(--accent);box-shadow:0 4px 8px rgba(0,0,0,.6)}
-  .controls-right{display:flex;flex-direction:column;gap:10px}
-  .preview{height:220px;border-radius:8px;border:1px solid #444;overflow:hidden;position:relative}
-  .preview .layer-sample{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#222;font-weight:700}
-  .css-output{background:#0f0f0f;padding:10px;border-radius:6px;margin-top:8px;font-family:monospace;color:#7fffd4;white-space:pre-wrap}
-  .btn{background:var(--accent);color:#000;padding:8px 12px;border-radius:6px;border:none;font-weight:700;cursor:pointer}
-  .inline{display:flex;gap:10px;align-items:center}
-  .midpoint{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.3);pointer-events:none}
-  .meta{font-size:12px;color:var(--muted);margin-top:6px}
-  .toolbar{display:flex;gap:8px;align-items:center}
-  .small-input{width:90px}
-  .strip-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--muted)}
-  .stops-list{display:flex;gap:8px;flex-wrap:wrap}
-  .stop-chip{background:#333;padding:6px;border-radius:6px;color:#ddd;font-size:13px}
-  .delete{text-decoration:none;color:#ff8080;margin-left:8px;cursor:pointer}
-  .dither-overlay{pointer-events:none;position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.015) 1px, transparent 1px);opacity:.6;mix-blend-mode:soft-light}
-  /* responsive small */
-  @media (max-width:980px){ .card{width:100%} .controls{grid-template-columns:1fr} }
+  .stop.selected{outline:2px solid var(--accent);box-shadow:0 10px 18px rgba(0,0,0,.7)}
+  .mid{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:3px;background:#fff;border:2px solid rgba(0,0,0,.6);cursor:grab;box-shadow:0 6px 12px rgba(0,0,0,.6)}
+  .mid.selected{outline:2px solid var(--accent-2)}
+  .muted{color:var(--muted);font-size:13px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .btn{background:var(--accent);color:#04202a;padding:8px 12px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.03);color:var(--muted)}
+  .preview-wrap{background:linear-gradient(180deg,#0c0d0e,#0e1011);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,.02)}
+  .preview{height:260px;border-radius:8px;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.03)}
+  .checker{position:absolute;inset:0;background-image:repeating-conic-gradient(#cbd5d933 0 25%, transparent 0 50%);background-size:20px 20px;opacity:.12}
+  .overlay{position:absolute;inset:0;display:block}
+  .sample-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b0d0e;mix-blend-mode:multiply;pointer-events:none}
+  .css-output{background:#0b0c0d;padding:10px;border-radius:8px;margin-top:12px;font-family:monospace;color:#b6f3da;white-space:pre-wrap;border:1px solid rgba(255,255,255,.02)}
+  .meta{font-size:12px;color:var(--muted);margin-top:8px}
+  .flex-between{display:flex;justify-content:space-between;align-items:center}
+  .small-chip{background:var(--chip);padding:6px 8px;border-radius:8px;color:#cfeee1;font-size:13px}
+  @media (max-width:1120px){ .app{width:100%} .layout{grid-template-columns:1fr} .preview{height:220px} }
 </style>
 </head>
 <body>
+  <div class="app" role="application" aria-label="Photoshop-like gradient editor">
+    <header>
+      <h1>Gradient Overlay — Modern (Photoshop-like)</h1>
+      <div class="muted">Full CSS export • Multi-stop • Midpoints • Blend modes</div>
+    </header>
 
-<div class="card" role="application" aria-label="Gradient editor">
-  <h1>Photoshop Gradient to css generator</h1>
+    <div class="layout">
+      <!-- LEFT: controls + rails -->
+      <div>
+        <div class="panel">
+          <div class="controls">
+            <div>
+              <label>Blend Mode</label>
+              <select id="blendMode">
+                <option>Normal</option><option>Multiply</option><option>Screen</option><option>Overlay</option>
+                <option>Darken</option><option>Lighten</option><option>Color Dodge</option><option>Color</option>
+                <option>Linear Dodge (Add)</option><option>Soft Light</option><option>Hard Light</option>
+                <option>Difference</option><option>Exclusion</option><option>Hue</option><option>Saturation</option>
+                <option>Luminosity</option>
+              </select>
+            </div>
 
-  <div class="row" style="align-items:flex-start">
-    <!-- LEFT: controls + strip -->
-    <div class="col" style="margin-right:12px">
+            <div>
+              <label>Opacity (%)</label>
+              <div class="row">
+                <input id="globalOpacityRange" type="range" min="0" max="100" value="100">
+                <input id="globalOpacityNum" type="number" min="0" max="100" value="100" class="small">
+              </div>
+            </div>
 
-      <div class="controls">
-        <div>
-          <label>Blend Mode</label>
-          <select id="blendMode">
-            <!-- Photoshop list; some map weirdly to CSS but we export the raw name -->
-            <option>Normal</option><option>Dissolve</option>
-            <option>Darken</option><option>Multiply</option><option>Color Burn</option>
-            <option>Linear Burn</option><option>Darker Color</option>
-            <option>Lighten</option><option>Screen</option><option>Color Dodge</option>
-            <option>Linear Dodge (Add)</option><option>Lighter Color</option>
-            <option>Overlay</option><option>Soft Light</option><option>Hard Light</option>
-            <option>Vivid Light</option><option>Linear Light</option><option>Pin Light</option>
-            <option>Hard Mix</option><option>Difference</option><option>Exclusion</option>
-            <option>Subtract</option><option>Divide</option>
-            <option>Hue</option><option>Saturation</option><option>Color</option><option>Luminosity</option>
-          </select>
-        </div>
+            <div>
+              <label>Style</label>
+              <select id="style">
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
+                <option value="angle">Angle (Conic)</option>
+                <option value="reflected">Reflected</option>
+                <option value="diamond">Diamond</option>
+              </select>
+            </div>
 
-        <div>
-          <label>Opacity (%)</label>
-          <input id="globalOpacity" type="range" min="0" max="100" value="100">
-        </div>
+            <div>
+              <label>Angle (°)</label>
+              <input id="angle" type="number" value="-90">
+            </div>
 
-        <div>
-          <label>Style</label>
-          <select id="style">
-            <option value="linear">Linear</option>
-            <option value="radial">Radial</option>
-            <option value="angle">Angle (conic)</option>
-            <option value="reflected">Reflected</option>
-            <option value="diamond">Diamond</option>
-          </select>
-        </div>
+            <div>
+              <label>Scale (%)</label>
+              <div class="row">
+                <input id="scaleRange" type="range" min="1" max="300" value="100">
+                <input id="scaleNum" type="number" min="1" max="300" value="100" class="small">
+              </div>
+            </div>
 
-        <div>
-          <label>Angle (°)</label>
-          <input id="angle" type="number" value="-90">
-        </div>
-
-        <div>
-          <label>Scale (%)</label>
-          <input id="scale" type="range" min="0" max="200" value="100">
-        </div>
-
-        <div class="inline">
-          <label><input id="reverse" type="checkbox"> Reverse</label>
-          <label><input id="dither" type="checkbox"> Dither</label>
-          <label><input id="align" type="checkbox" checked> Align with Layer</label>
-        </div>
-      </div>
-
-      <div style="height:12px"></div>
-
-      <!-- gradient strip -->
-      <div class="strip-wrap">
-        <div id="strip" class="gradient-strip" title="Click to add a stop"></div>
-        <div class="strip-legend">
-          <div id="legendLeft">0%</div>
-          <div id="legendRight">100%</div>
-        </div>
-        <div class="meta">Tip: Click strip to add stop • Drag stops to reposition • Select a stop to edit color/alpha/pos</div>
-      </div>
-
-      <div style="height:10px"></div>
-
-      <div class="stops-list" id="stopsList" aria-live="polite"></div>
-
-    </div>
-
-    <!-- RIGHT: preview + selected stop editor -->
-    <div class="col" style="max-width:420px">
-      <label>Preview</label>
-      <div class="preview" id="previewWrap">
-        <div id="preview" class="layer-sample">Sample</div>
-      </div>
-
-      <div style="height:10px"></div>
-
-      <div style="background:#292929;padding:12px;border-radius:8px">
-        <label>Selected Stop</label>
-        <div id="selectedPanel">
-          <div class="inline" style="margin-bottom:8px">
-            <input id="stopColor" type="color" value="#ffffff">
-            <input id="stopAlpha" type="range" min="0" max="100" value="100" style="flex:1">
+            <div class="row" style="align-items:center;">
+              <label style="display:flex;gap:8px;align-items:center"><input id="reverse" type="checkbox">Reverse</label>
+              <label style="display:flex;gap:8px;align-items:center"><input id="dither" type="checkbox">Dither</label>
+              <label style="display:flex;gap:8px;align-items:center"><input id="align" type="checkbox" checked>Align with layer</label>
+            </div>
           </div>
-          <div class="inline" style="gap:8px">
-            <label style="min-width:60px">Position (%)</label>
-            <input id="stopPos" type="number" class="small-input" min="0" max="100" value="0">
-            <button id="deleteStop" class="btn" style="background:#ff6b6b">Delete</button>
+
+          <!-- Color rail -->
+          <div class="rail" aria-label="Color stops">
+            <div class="flex-between" style="margin-bottom:8px">
+              <div class="muted">Color Stops</div>
+              <div class="small-chip">Click strip to add</div>
+            </div>
+            <div id="colorStrip" class="strip" data-rail="color" title="Click to add color stop"></div>
+            <div class="meta">Click & drag stops. Midpoint diamonds between adjacent stops.</div>
+          </div>
+
+          <!-- Alpha rail -->
+          <div class="rail" aria-label="Opacity stops">
+            <div class="flex-between" style="margin-bottom:8px">
+              <div class="muted">Opacity Stops</div>
+              <div class="small-chip">Separate opacity rail</div>
+            </div>
+            <div id="alphaStrip" class="strip" data-rail="alpha" title="Click to add opacity stop"></div>
+            <div class="meta">Opacity stops control per-stop alpha (Photoshop-style).</div>
+          </div>
+
+          <div class="toolbar">
+            <button id="resetBtn" class="btn ghost">Reset</button>
+            <button id="copyBtn" class="btn">Copy Full CSS</button>
+            <div style="flex:1"></div>
+            <div class="muted">Preview updates live</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: preview + selected editor + CSS -->
+      <div>
+        <div class="panel">
+          <div class="muted" style="margin-bottom:8px">Preview</div>
+          <div class="preview-wrap">
+            <div id="preview" class="preview" aria-live="polite">
+              <div class="checker"></div>
+              <!-- gradient overlay element (we transform/scale this for radial/diamond) -->
+              <div id="overlay" class="overlay" style="pointer-events:none"></div>
+              <div id="sampleLabel" class="sample-label">SAMPLE</div>
+            </div>
           </div>
 
           <div style="height:10px"></div>
-          <div class="meta">Alpha acts like Photoshop's opacity stop. For separate opacity stops you can set alpha per stop.</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div>
+              <div class="muted">Selected Color Stop</div>
+              <div class="row" style="margin-top:6px;align-items:center">
+                <input id="selColor" type="color">
+                <input id="selColorPos" type="number" min="0" max="100" value="0" class="small" style="margin-left:6px">
+              </div>
+              <div style="margin-top:8px">
+                <button id="deleteColorStop" class="btn ghost">Delete Color Stop</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="muted">Selected Opacity Stop</div>
+              <div class="row" style="margin-top:6px;align-items:center">
+                <input id="selAlphaVal" type="number" min="0" max="100" value="100" class="small">
+                <input id="selAlphaPos" type="number" min="0" max="100" value="0" class="small" style="margin-left:6px">
+              </div>
+              <div style="margin-top:8px">
+                <button id="deleteAlphaStop" class="btn ghost">Delete Alpha Stop</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:8px"></div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div>
+              <div class="muted">Selected Midpoint (Color)</div>
+              <input id="selMidColor" type="number" min="0" max="100" value="50" style="margin-top:8px" class="small">
+              <div class="meta">0 = closer to left stop, 100 = closer to right stop</div>
+            </div>
+
+            <div>
+              <div class="muted">Selected Midpoint (Opacity)</div>
+              <input id="selMidAlpha" type="number" min="0" max="100" value="50" style="margin-top:8px" class="small">
+              <div class="meta">Midpoint between opacity stops</div>
+            </div>
+          </div>
+
+          <div style="height:10px"></div>
+
+          <div id="cssOut" class="css-output" aria-live="polite"></div>
         </div>
-
-        <div style="height:10px"></div>
-
-        <div style="display:flex;gap:8px;align-items:center">
-          <button id="copyBtn" class="btn">Copy CSS</button>
-          <button id="resetBtn" class="btn" style="background:#6b6b6b">Reset</button>
-        </div>
-
-        <div id="cssCode" class="css-output" aria-live="polite"></div>
       </div>
-
     </div>
   </div>
-</div>
 
 <script>
-/*
-Photoshop-like gradient editor:
-- stops: array of {id,color:#rrggbb,alpha:0..1,pos:0..100}
-- add stop by clicking strip
-- drag stop horizontally to change pos
-- select stop -> edit controls (color, alpha, pos, delete)
-- generate CSS using rgba() color stops and percentages
-- supports style toggles
+/* Full-feature, single-file gradient editor
+   - Color & opacity rails
+   - Multi stops + add/remove/drag
+   - Midpoints per adjacent pair
+   - Styles: linear, radial (scale), angle (conic), reflected, diamond
+   - Reverse, Align, Dither, Blend Mode, Opacity, Scale, Angle
+   - Full CSS export: background + mix-blend-mode + opacity + transform (when used)
 */
 
-const strip = document.getElementById('strip');
-const preview = document.getElementById('preview');
-const cssCode = document.getElementById('cssCode');
-const stopsList = document.getElementById('stopsList');
-
-const stopColor = document.getElementById('stopColor');
-const stopAlpha = document.getElementById('stopAlpha');
-const stopPos = document.getElementById('stopPos');
-const deleteStop = document.getElementById('deleteStop');
-
-const blendMode = document.getElementById('blendMode');
-const globalOpacity = document.getElementById('globalOpacity');
-const styleSel = document.getElementById('style');
-const angleInput = document.getElementById('angle');
-const scaleInput = document.getElementById('scale');
-const reverseCB = document.getElementById('reverse');
-const ditherCB = document.getElementById('dither');
-
-const copyBtn = document.getElementById('copyBtn');
-const resetBtn = document.getElementById('resetBtn');
-
-let stops = [];
-let selectedId = null;
-let dragState = null;
-
-// utility
+// ---------- Utilities ----------
+const $ = (sel) => document.querySelector(sel);
 const uid = () => Math.random().toString(36).slice(2,9);
-
-// add initial two stops (white to black)
-function initDefault(){
-  stops = [
-    {id:uid(), color:'#ffffff', alpha:1, pos:0},
-    {id:uid(), color:'#000000', alpha:1, pos:100}
-  ];
-  selectedId = stops[0].id;
-  renderAll();
-}
-initDefault();
-
-function renderAll(){
-  renderStrip();
-  renderStopsList();
-  renderSelectedPanel();
-  updatePreview();
-  updateCSS();
-}
-
-function renderStrip(){
-  // build CSS gradient string from stops (sorted)
-  const st = [...stops].sort((a,b)=>a.pos-b.pos);
-  // reverse handling
-  const rev = reverseCB.checked;
-  const stopsForCss = rev ? st.slice().reverse() : st;
-  const cssStops = stopsForCss.map(s => rgbaStr(s) + ' ' + s.pos + '%').join(', ');
-
-  // style types mapping
-  const style = styleSel.value;
-  let bg = '';
-  const angle = parseFloat(angleInput.value) || 0;
-  const scale = parseFloat(scaleInput.value) || 100;
-
-  switch(style){
-    case 'linear':
-      bg = `linear-gradient(${angle}deg, ${cssStops})`;
-      break;
-    case 'radial':
-      bg = `radial-gradient(circle ${scale}%, ${cssStops})`;
-      break;
-    case 'angle':
-      bg = `conic-gradient(from ${angle}deg, ${cssStops})`;
-      break;
-    case 'reflected':
-      // approximate reflected by repeating
-      const rep = cssStops + ', ' + cssStops;
-      bg = `linear-gradient(${angle}deg, ${rep})`;
-      break;
-    case 'diamond':
-      bg = `radial-gradient(closest-side at center, ${cssStops})`;
-      break;
-  }
-
-  strip.style.background = bg;
-  // remove all existing .stop elements
-  strip.querySelectorAll('.stop').forEach(n=>n.remove());
-
-  // create stop handles
-  st.forEach(s=>{
-    const el = document.createElement('div');
-    el.className = 'stop';
-    el.dataset.id = s.id;
-    el.style.left = s.pos+'%';
-    el.title = s.color + ' @ ' + s.pos + '%';
-    el.style.background = rgbaStr(s);
-    if(s.id === selectedId) el.classList.add('selected');
-    const nub = document.createElement('div'); nub.className = 'nub';
-    el.appendChild(nub);
-    // mouse events
-    el.addEventListener('pointerdown', startDrag);
-    el.addEventListener('click', (e)=>{ e.stopPropagation(); selectStop(s.id); });
-    strip.appendChild(el);
-  });
-
-  // show dither overlay if checked (visual only)
-  strip.querySelectorAll('.dither-overlay').forEach(n=>n.remove());
-  if(ditherCB.checked){
-    const d = document.createElement('div');
-    d.className = 'dither-overlay';
-    strip.appendChild(d);
-  }
-}
-
-function rgbaStr(s){
-  // ensure color HEX -> r,g,b
-  const hex = s.color.replace('#','');
-  const r = parseInt(hex.substring(0,2),16);
-  const g = parseInt(hex.substring(2,4),16);
-  const b = parseInt(hex.substring(4,6),16);
-  return `rgba(${r},${g},${b},${+s.alpha.toFixed(3)})`;
-}
-
-function startDrag(e){
-  e.preventDefault();
-  const handle = e.currentTarget;
-  const id = handle.dataset.id;
-  dragState = {id, startX:e.clientX};
-  handle.setPointerCapture(e.pointerId);
-
-  // listen move on document for robust dragging
-  const onMove = (ev) => {
-    const rect = strip.getBoundingClientRect();
-    const x = ev.clientX - rect.left;
-    let pct = (x / rect.width) * 100;
-    if(pct < 0) pct = 0; if(pct > 100) pct = 100;
-    // update stop pos
-    const s = stops.find(st=>st.id === id);
-    if(s){ s.pos = +pct.toFixed(1); renderAll(); }
-  };
-  const onUp = (ev) => {
-    document.removeEventListener('pointermove', onMove);
-    document.removeEventListener('pointerup', onUp);
-    dragState = null;
-  };
-  document.addEventListener('pointermove', onMove);
-  document.addEventListener('pointerup', onUp);
-}
-
-strip.addEventListener('click', (e)=>{
-  // add new stop at click pos
-  const rect = strip.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  let pct = (x / rect.width) * 100;
-  if(pct < 0) pct = 0; if(pct > 100) pct = 100;
-  // create new stop with sampled color between nearest neighbors (lerp)
-  const newStop = {id:uid(), color:'#ffffff', alpha:1, pos:+pct.toFixed(1)};
-  // pick color by interpolating nearest stops
-  const sorted = [...stops].sort((a,b)=>a.pos-b.pos);
-  let left = sorted[0], right = sorted[sorted.length-1];
-  for(let i=0;i<sorted.length-1;i++){
-    if(pct >= sorted[i].pos && pct <= sorted[i+1].pos){ left=sorted[i]; right=sorted[i+1]; break; }
-  }
-  const t = (pct - left.pos) / Math.max(1, right.pos - left.pos);
-  const interp = lerpColor(left.color, right.color, t);
-  newStop.color = interp;
-  newStop.alpha = +(left.alpha + (right.alpha - left.alpha) * t).toFixed(3);
-  stops.push(newStop);
-  selectedId = newStop.id;
-  renderAll();
-});
-
-function lerpColor(a,b,t){
-  const ax = hexToRgb(a), bx = hexToRgb(b);
-  const r = Math.round(ax.r + (bx.r-ax.r)*t);
-  const g = Math.round(ax.g + (bx.g-ax.g)*t);
-  const bl = Math.round(ax.b + (bx.b-ax.b)*t);
+const clamp = (v,min,max) => Math.max(min, Math.min(max, +v));
+const hexToRgb = hex => {
+  hex = hex.replace('#',''); if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+  return {r:parseInt(hex.slice(0,2),16), g:parseInt(hex.slice(2,4),16), b:parseInt(hex.slice(4,6),16)};
+};
+const rgbToHex = (r,g,b) => '#'+[r,g,b].map(n=>n.toString(16).padStart(2,'0')).join('');
+const lerp = (a,b,t)=> a + (b-a)*t;
+function lerpColorHex(a,b,t){
+  const A = hexToRgb(a), B = hexToRgb(b);
+  const r = Math.round(lerp(A.r,B.r,t)), g = Math.round(lerp(A.g,B.g,t)), bl = Math.round(lerp(A.b,B.b,t));
   return rgbToHex(r,g,bl);
 }
-function hexToRgb(hex){ hex = hex.replace('#',''); return {r:parseInt(hex.slice(0,2),16), g:parseInt(hex.slice(2,4),16), b:parseInt(hex.slice(4,6),16)}; }
-function rgbToHex(r,g,b){ return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
 
-// selection management
-function selectStop(id){
-  selectedId = id;
-  renderAll();
+// remap using midpoint to emulate Photoshop midpoint behavior
+function remapUsingMidpoint(t,m){
+  if(m <= 0) return 0;
+  if(m >= 1) return 1;
+  if(t <= m) return (t/m)*0.5;
+  return 0.5 + ((t - m) / (1 - m)) * 0.5;
 }
 
-function renderStopsList(){
-  stopsList.innerHTML = '';
-  const sorted = [...stops].sort((a,b)=>a.pos-b.pos);
-  sorted.forEach(s=>{
-    const chip = document.createElement('div');
-    chip.className = 'stop-chip';
-    chip.innerHTML = `<strong style="color:${s.color}">${s.color.toUpperCase()}</strong> &nbsp; ${s.pos}% 
-      <span style="color:#aaa">α=${Math.round(s.alpha*100)}%</span>
-      <a class="delete" data-id="${s.id}">×</a>`;
-    chip.querySelector('.delete')?.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      removeStop(s.id);
-    });
-    chip.addEventListener('click', ()=>{ selectStop(s.id); });
-    stopsList.appendChild(chip);
+function mkKey(a,b){ return a < b ? `${a}-${b}` : `${b}-${a}`; }
+
+// ---------- DOM refs ----------
+const colorStrip = $('#colorStrip');
+const alphaStrip = $('#alphaStrip');
+const overlay = $('#overlay');
+const preview = $('#preview');
+const cssOut = $('#cssOut');
+
+const blendMode = $('#blendMode');
+const globalOpacityRange = $('#globalOpacityRange');
+const globalOpacityNum = $('#globalOpacityNum');
+const styleSel = $('#style');
+const angleInput = $('#angle');
+const scaleRange = $('#scaleRange');
+const scaleNum = $('#scaleNum');
+const reverseCB = $('#reverse');
+const ditherCB = $('#dither');
+const alignCB = $('#align');
+const resetBtn = $('#resetBtn');
+const copyBtn = $('#copyBtn');
+
+const selColor = $('#selColor');
+const selColorPos = $('#selColorPos');
+const selAlphaVal = $('#selAlphaVal');
+const selAlphaPos = $('#selAlphaPos');
+const selMidColor = $('#selMidColor');
+const selMidAlpha = $('#selMidAlpha');
+const deleteColorStopBtn = $('#deleteColorStop');
+const deleteAlphaStopBtn = $('#deleteAlphaStop');
+
+// ---------- State ----------
+let state = {
+  colorStops: [],   // {id,color,pos}
+  alphaStops: [],   // {id,alpha,pos}
+  colorMid: {},     // key -> 0..100
+  alphaMid: {},     // key -> 0..100
+  selected: {rail:'color', type:'stop', id:null}, // type: stop|mid
+};
+
+// ---------- Defaults & initialization ----------
+function resetState(){
+  const c0 = {id:uid(), color:'#ffffff', pos:0};
+  const c1 = {id:uid(), color:'#000000', pos:100};
+  const a0 = {id:uid(), alpha:1, pos:0};
+  const a1 = {id:uid(), alpha:1, pos:100};
+  state.colorStops = [c0, c1];
+  state.alphaStops = [a0, a1];
+  state.colorMid = {}; state.colorMid[mkKey(c0.id,c1.id)] = 50;
+  state.alphaMid = {}; state.alphaMid[mkKey(a0.id,a1.id)] = 50;
+  state.selected = {rail:'color', type:'stop', id:c0.id};
+
+  // controls default
+  globalOpacityRange.value = 100; globalOpacityNum.value = 100;
+  styleSel.value = 'linear';
+  angleInput.value = -90;
+  scaleRange.value = 100; scaleNum.value = 100;
+  reverseCB.checked = false; ditherCB.checked=false; alignCB.checked = true;
+}
+resetState();
+
+// ---------- Helpers for sorted stops ----------
+function sortedStops(arr){ return [...arr].sort((a,b)=>a.pos - b.pos); }
+
+// ---------- Render strips ----------
+function renderStrip(rail){
+  const el = rail === 'color' ? colorStrip : alphaStrip;
+  el.innerHTML = '';
+  const stops = sortedStops(rail === 'color' ? state.colorStops : state.alphaStops);
+
+  // build visual strip gradient for the rail (color: actual colors, alpha: white->transparent representation)
+  const cssStops = stops.map(s => {
+    if(rail === 'color') return `${s.color} ${s.pos}%`;
+    else return `rgba(255,255,255,${+s.alpha}) ${s.pos}%`;
+  }).join(', ');
+  el.style.background = `linear-gradient(90deg, ${cssStops})`;
+
+  // create stop handles
+  stops.forEach(s => {
+    const node = document.createElement('div');
+    node.className = 'stop' + (state.selected.type==='stop' && state.selected.rail===rail && state.selected.id===s.id ? ' selected' : '');
+    node.style.left = s.pos + '%';
+    node.dataset.id = s.id;
+    node.dataset.rail = rail;
+    node.title = rail==='color' ? `${s.color} @ ${s.pos}%` : `α=${Math.round(s.alpha*100)}% @ ${s.pos}%`;
+    node.style.background = rail==='color' ? s.color : `rgba(255,255,255,${s.alpha})`;
+    const nub = document.createElement('div'); nub.className='nub'; node.appendChild(nub);
+
+    // interactions
+    node.addEventListener('pointerdown', ev => startDragStop(ev, rail, s.id));
+    node.addEventListener('click', ev => { ev.stopPropagation(); selectStop(rail, s.id); });
+    el.appendChild(node);
   });
-}
 
-function removeStop(id){
-  if(stops.length <= 2){ alert('At least two stops required'); return; }
-  stops = stops.filter(s=>s.id !== id);
-  if(selectedId === id) selectedId = stops[0].id;
-  renderAll();
-}
-
-// selected panel binding
-function renderSelectedPanel(){
-  const s = stops.find(x=>x.id === selectedId);
-  if(!s){
-    // hide panel
-    stopColor.disabled=true; stopAlpha.disabled=true; stopPos.disabled=true; deleteStop.disabled=true;
-    return;
-  }
-  stopColor.disabled=false; stopAlpha.disabled=false; stopPos.disabled=false; deleteStop.disabled=false;
-  stopColor.value = s.color;
-  stopAlpha.value = Math.round(s.alpha*100);
-  stopPos.value = Math.round(s.pos);
-}
-
-stopColor.addEventListener('input', (e)=>{
-  const s = stops.find(x=>x.id===selectedId); if(!s) return;
-  s.color = e.target.value; renderAll();
-});
-stopAlpha.addEventListener('input', (e)=>{
-  const s = stops.find(x=>x.id===selectedId); if(!s) return;
-  s.alpha = +(e.target.value/100).toFixed(3); renderAll();
-});
-stopPos.addEventListener('input', (e)=>{
-  let v = +e.target.value;
-  if(v<0) v=0; if(v>100) v=100;
-  const s = stops.find(x=>x.id===selectedId); if(!s) return;
-  s.pos = +v; renderAll();
-});
-deleteStop.addEventListener('click', ()=>{
-  if(!selectedId) return;
-  removeStop(selectedId);
-});
-
-// global control bindings
-[blendMode, globalOpacity, styleSel, angleInput, scaleInput, reverseCB, ditherCB].forEach(el=>{
-  el.addEventListener('input', ()=>{ renderAll(); });
-});
-copyBtn.addEventListener('click', copyCSS);
-resetBtn.addEventListener('click', initDefault);
-
-// update preview
-function updatePreview(){
-  // preview layering: show example background for blend modes; we will set preview background to gradient
-  const st = [...stops].sort((a,b)=>a.pos-b.pos);
-  const rev = reverseCB.checked; 
-  const style = styleSel.value;
-  const cssStops = (rev ? st.slice().reverse() : st).map(s => rgbaStr(s) + ' ' + s.pos + '%').join(', ');
-  const angle = parseFloat(angleInput.value) || 0;
-  const scale = parseFloat(scaleInput.value) || 100;
-  let bg = '';
-
-  switch(style){
-    case 'linear': bg = `linear-gradient(${angle}deg, ${cssStops})`; break;
-    case 'radial': bg = `radial-gradient(circle ${scale}%, ${cssStops})`; break;
-    case 'angle': bg = `conic-gradient(from ${angle}deg, ${cssStops})`; break;
-    case 'reflected': bg = `linear-gradient(${angle}deg, ${cssStops}, ${cssStops})`; break;
-    case 'diamond': bg = `radial-gradient(closest-side at center, ${cssStops})`; break;
+  // create midpoints
+  for(let i=0;i<stops.length-1;i++){
+    const left = stops[i], right = stops[i+1];
+    const key = mkKey(left.id,right.id);
+    const midVal = (rail==='color' ? (state.colorMid[key] ?? 50) : (state.alphaMid[key] ?? 50));
+    const midPos = left.pos + (right.pos - left.pos) * (midVal/100);
+    const m = document.createElement('div');
+    m.className = 'mid' + (state.selected.type==='mid' && state.selected.rail===rail && state.selected.id===key ? ' selected' : '');
+    m.style.left = midPos + '%';
+    m.dataset.key = key; m.dataset.rail = rail;
+    m.addEventListener('pointerdown', ev => startDragMid(ev, rail, key));
+    m.addEventListener('click', ev => { ev.stopPropagation(); selectMid(rail, key); });
+    el.appendChild(m);
   }
 
-  preview.style.background = bg;
-  preview.style.opacity = (globalOpacity.value/100).toFixed(3);
-
-  // blend mode simulation: we'll set mix-blend-mode on an overlay (browser supports many)
-  // we can't map every PS blend exactly; we'll set raw from dropdown (lowercased)
-  const bm = blendMode.value.toLowerCase();
-  preview.style.mixBlendMode = cssBlendMap(bm);
-  // optionally overlay dither in preview
-  preview.querySelectorAll('.dither-overlay').forEach(n=>n.remove());
+  // dither overlay
+  el.querySelectorAll('.dither-overlay').forEach(n=>n.remove());
   if(ditherCB.checked){
     const d = document.createElement('div');
     d.className = 'dither-overlay';
-    preview.appendChild(d);
+    d.style.position='absolute'; d.style.inset='0'; d.style.pointerEvents='none';
+    d.style.backgroundImage = 'radial-gradient(rgba(0,0,0,.02) 1px, transparent 1px)';
+    el.appendChild(d);
   }
+}
+
+// ---------- Selection ----------
+function selectStop(rail,id){
+  state.selected = {rail, type:'stop', id};
+  syncSelectedPanel();
+  renderAll();
+}
+function selectMid(rail,key){
+  state.selected = {rail, type:'mid', id:key};
+  syncSelectedPanel();
+  renderAll();
+}
+
+// ---------- Drag stop ----------
+function startDragStop(e, rail, id){
+  e.preventDefault();
+  const strip = rail === 'color' ? colorStrip : alphaStrip;
+  const rect = strip.getBoundingClientRect();
+  function move(ev){
+    let pct = clamp(((ev.clientX - rect.left)/rect.width)*100, 0, 100);
+    const arr = rail === 'color' ? state.colorStops : state.alphaStops;
+    const s = arr.find(x=>x.id===id);
+    if(s){ s.pos = +pct.toFixed(1); renderAll(); }
+  }
+  function up(){ document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); }
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+}
+
+// ---------- Drag mid ----------
+function startDragMid(e, rail, key){
+  e.preventDefault();
+  const strip = rail === 'color' ? colorStrip : alphaStrip;
+  const rect = strip.getBoundingClientRect();
+  function move(ev){
+    let pctAbs = clamp(((ev.clientX - rect.left)/rect.width)*100, 0, 100);
+    const arr = rail === 'color' ? state.colorStops : state.alphaStops;
+    const sarr = sortedStops(arr);
+    const [a,b] = key.split('-');
+    const left = sarr.find(s => s.id === a) || sarr.find(s=>s.id===b);
+    const right = sarr.find(s => s.id === b) || sarr.find(s=>s.id===a);
+    if(!left || !right) return;
+    const span = right.pos - left.pos;
+    const midNorm = span === 0 ? 0 : ((pctAbs - left.pos) / span) * 100;
+    const midVal = clamp(midNorm,0,100);
+    if(rail==='color') state.colorMid[key] = +midVal.toFixed(1);
+    else state.alphaMid[key] = +midVal.toFixed(1);
+    state.selected = {rail, type:'mid', id:key};
+    syncSelectedPanel();
+    renderAll();
+  }
+  function up(){ document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); }
+  document.addEventListener('pointermove', move);
+  document.addEventListener('pointerup', up);
+}
+
+// ---------- Add stop by clicking strip ----------
+[colorStrip, alphaStrip].forEach(el=>{
+  el.addEventListener('click', (e)=>{
+    if(e.target !== el) return;
+    const rect = el.getBoundingClientRect();
+    let pct = clamp(((e.clientX - rect.left)/rect.width)*100,0,100);
+    pct = +pct.toFixed(1);
+    if(el.id === 'colorStrip'){
+      const sorted = sortedStops(state.colorStops);
+      let left = sorted[0], right = sorted[sorted.length-1];
+      for(let i=0;i<sorted.length-1;i++) if(pct >= sorted[i].pos && pct <= sorted[i+1].pos){ left = sorted[i]; right = sorted[i+1]; break; }
+      const t = (right.pos === left.pos) ? 0 : (pct - left.pos) / (right.pos - left.pos);
+      const color = lerpColorHex(left.color, right.color, t);
+      const id = uid(); state.colorStops.push({id, color, pos:pct});
+      // adjust midpoints: remove old left-right midpoint, add left-new & new-right
+      delete state.colorMid[mkKey(left.id, right.id)];
+      state.colorMid[mkKey(left.id, id)] = 50; state.colorMid[mkKey(id, right.id)] = 50;
+      state.selected = {rail:'color', type:'stop', id};
+    } else {
+      const sorted = sortedStops(state.alphaStops);
+      let left = sorted[0], right = sorted[sorted.length-1];
+      for(let i=0;i<sorted.length-1;i++) if(pct >= sorted[i].pos && pct <= sorted[i+1].pos){ left = sorted[i]; right = sorted[i+1]; break; }
+      const t = (right.pos === left.pos) ? 0 : (pct - left.pos) / (right.pos - left.pos);
+      const alpha = +(left.alpha + (right.alpha - left.alpha) * t).toFixed(3);
+      const id = uid(); state.alphaStops.push({id, alpha, pos:pct});
+      delete state.alphaMid[mkKey(left.id, right.id)];
+      state.alphaMid[mkKey(left.id, id)] = 50; state.alphaMid[mkKey(id, right.id)] = 50;
+      state.selected = {rail:'alpha', type:'stop', id};
+    }
+    renderAll();
+  });
+});
+
+// ---------- Delete stop helpers ----------
+function removeStop(rail, id){
+  if(rail === 'color'){
+    if(state.colorStops.length <= 2){ alert('At least two color stops required'); return; }
+    const sorted = sortedStops(state.colorStops);
+    const idx = sorted.findIndex(s=>s.id===id);
+    const left = sorted[idx-1] || null, right = sorted[idx+1] || null;
+    Object.keys(state.colorMid).forEach(k => { if(k.includes(id)) delete state.colorMid[k]; });
+    if(left && right) state.colorMid[mkKey(left.id,right.id)] = 50;
+    state.colorStops = state.colorStops.filter(s => s.id !== id);
+    state.selected = {rail:'color', type:'stop', id: state.colorStops[0].id};
+  } else {
+    if(state.alphaStops.length <= 2){ alert('At least two opacity stops required'); return; }
+    const sorted = sortedStops(state.alphaStops);
+    const idx = sorted.findIndex(s=>s.id===id);
+    const left = sorted[idx-1] || null, right = sorted[idx+1] || null;
+    Object.keys(state.alphaMid).forEach(k => { if(k.includes(id)) delete state.alphaMid[k]; });
+    if(left && right) state.alphaMid[mkKey(left.id,right.id)] = 50;
+    state.alphaStops = state.alphaStops.filter(s => s.id !== id);
+    state.selected = {rail:'alpha', type:'stop', id: state.alphaStops[0].id};
+  }
+  renderAll();
+}
+$('#deleteColorStop').addEventListener('click', ()=> {
+  if(state.selected.type==='stop' && state.selected.rail==='color') removeStop('color', state.selected.id);
+  else alert('Select a color stop to delete');
+});
+$('#deleteAlphaStop').addEventListener('click', ()=> {
+  if(state.selected.type==='stop' && state.selected.rail==='alpha') removeStop('alpha', state.selected.id);
+  else alert('Select an opacity stop to delete');
+});
+
+// ---------- Selection panel binding ----------
+function syncSelectedPanel(){
+  const sel = state.selected;
+  if(sel.type === 'stop'){
+    if(sel.rail === 'color'){
+      const s = state.colorStops.find(x=>x.id===sel.id);
+      if(!s) return;
+      selColor.disabled=false; selColor.value = s.color;
+      selColorPos.disabled=false; selColorPos.value = Math.round(s.pos);
+      selAlphaVal.disabled=true; selAlphaPos.disabled=true;
+      selMidColor.disabled=true; selMidAlpha.disabled=true;
+    } else {
+      const s = state.alphaStops.find(x=>x.id===sel.id);
+      if(!s) return;
+      selAlphaVal.disabled=false; selAlphaVal.value = Math.round(s.alpha*100);
+      selAlphaPos.disabled=false; selAlphaPos.value = Math.round(s.pos);
+      selColor.disabled=true; selColorPos.disabled=true;
+      selMidColor.disabled=true; selMidAlpha.disabled=true;
+    }
+  } else if(sel.type === 'mid'){
+    const key = sel.id;
+    if(sel.rail === 'color'){
+      selMidColor.disabled=false; selMidColor.value = +(state.colorMid[key] ?? 50);
+      selMidAlpha.disabled=true;
+      // fill left stop color for context (read-only)
+      const sides = key.split('-'); const left = state.colorStops.find(s=>s.id===sides[0]) || {color:'#fff',pos:0};
+      selColor.disabled=true; selColor.value = left.color; selColorPos.disabled=true; selColorPos.value = Math.round(left.pos);
+      selAlphaVal.disabled=true; selAlphaPos.disabled=true;
+    } else {
+      selMidAlpha.disabled=false; selMidAlpha.value = +(state.alphaMid[key] ?? 50);
+      selMidColor.disabled=true;
+      const sides = key.split('-'); const left = state.alphaStops.find(s=>s.id===sides[0]) || {alpha:1,pos:0};
+      selAlphaVal.disabled=true; selAlphaVal.value = Math.round(left.alpha*100);
+      selAlphaPos.disabled=true; selAlphaPos.value = Math.round(left.pos);
+      selColor.disabled=true; selColorPos.disabled=true;
+    }
+  }
+}
+
+// ---------- Selected input event handlers ----------
+selColor.addEventListener('input', ()=>{
+  if(state.selected.type==='stop' && state.selected.rail==='color'){
+    const s = state.colorStops.find(x=>x.id===state.selected.id); if(s){ s.color = selColor.value; renderAll(); }
+  }
+});
+selColorPos.addEventListener('input', ()=>{
+  if(state.selected.type==='stop' && state.selected.rail==='color'){
+    const v = clamp(+selColorPos.value,0,100); selColorPos.value = v;
+    const s = state.colorStops.find(x=>x.id===state.selected.id); if(s){ s.pos = +v; renderAll(); }
+  }
+});
+selAlphaVal.addEventListener('input', ()=>{
+  if(state.selected.type==='stop' && state.selected.rail==='alpha'){
+    const v = clamp(+selAlphaVal.value,0,100); selAlphaVal.value = v;
+    const s = state.alphaStops.find(x=>x.id===state.selected.id); if(s){ s.alpha = +(v/100).toFixed(3); renderAll(); }
+  }
+});
+selAlphaPos.addEventListener('input', ()=>{
+  if(state.selected.type==='stop' && state.selected.rail==='alpha'){
+    const v = clamp(+selAlphaPos.value,0,100); selAlphaPos.value = v;
+    const s = state.alphaStops.find(x=>x.id===state.selected.id); if(s){ s.pos = +v; renderAll(); }
+  }
+});
+selMidColor.addEventListener('input', ()=>{
+  if(state.selected.type==='mid' && state.selected.rail==='color'){
+    const k = state.selected.id; state.colorMid[k] = clamp(+selMidColor.value,0,100); renderAll();
+  }
+});
+selMidAlpha.addEventListener('input', ()=>{
+  if(state.selected.type==='mid' && state.selected.rail==='alpha'){
+    const k = state.selected.id; state.alphaMid[k] = clamp(+selMidAlpha.value,0,100); renderAll();
+  }
+});
+
+// ---------- Global control binds ----------
+[blendMode, styleSel, angleInput, scaleRange, scaleNum, reverseCB, ditherCB, alignCB, globalOpacityRange, globalOpacityNum].forEach(el=>{
+  el.addEventListener('input', (e)=>{
+    // keep range-number sync
+    if(el === scaleRange) scaleNum.value = scaleRange.value;
+    if(el === scaleNum) scaleRange.value = scaleNum.value;
+    if(el === globalOpacityRange) globalOpacityNum.value = globalOpacityRange.value;
+    if(el === globalOpacityNum) globalOpacityRange.value = globalOpacityNum.value;
+    renderAll();
+  });
+});
+
+// ---------- Sampling for preview & CSS ----------
+function gatherSamplePositions(){
+  const pts = new Set();
+  state.colorStops.forEach(s=>pts.add(+s.pos.toFixed(3)));
+  state.alphaStops.forEach(s=>pts.add(+s.pos.toFixed(3)));
+  const cs = sortedStops(state.colorStops);
+  for(let i=0;i<cs.length-1;i++){
+    const left = cs[i], right = cs[i+1];
+    const key = mkKey(left.id,right.id);
+    const mid = (state.colorMid[key] ?? 50);
+    const pos = left.pos + (right.pos - left.pos) * (mid/100);
+    pts.add(+pos.toFixed(3));
+  }
+  const as = sortedStops(state.alphaStops);
+  for(let i=0;i<as.length-1;i++){
+    const left = as[i], right = as[i+1];
+    const key = mkKey(left.id,right.id);
+    const mid = (state.alphaMid[key] ?? 50);
+    const pos = left.pos + (right.pos - left.pos) * (mid/100);
+    pts.add(+pos.toFixed(3));
+  }
+  return Array.from(pts).map(x=>+x).sort((a,b)=>a-b);
+}
+
+function sampleColorAt(pos){
+  const cs = sortedStops(state.colorStops);
+  if(pos <= cs[0].pos) return cs[0].color;
+  if(pos >= cs[cs.length-1].pos) return cs[cs.length-1].color;
+  for(let i=0;i<cs.length-1;i++){
+    if(pos >= cs[i].pos && pos <= cs[i+1].pos){
+      const left = cs[i], right = cs[i+1];
+      const key = mkKey(left.id,right.id);
+      const mid = (state.colorMid[key] ?? 50)/100;
+      const span = right.pos - left.pos;
+      const t = span === 0 ? 0 : (pos - left.pos) / span;
+      const tAdj = remapUsingMidpoint(t, mid);
+      return lerpColorHex(left.color, right.color, tAdj);
+    }
+  }
+  return cs[0].color;
+}
+function sampleAlphaAt(pos){
+  const as = sortedStops(state.alphaStops);
+  if(pos <= as[0].pos) return as[0].alpha;
+  if(pos >= as[as.length-1].pos) return as[as.length-1].alpha;
+  for(let i=0;i<as.length-1;i++){
+    if(pos >= as[i].pos && pos <= as[i+1].pos){
+      const left = as[i], right = as[i+1];
+      const key = mkKey(left.id,right.id);
+      const mid = (state.alphaMid[key] ?? 50)/100;
+      const span = right.pos - left.pos;
+      const t = span === 0 ? 0 : (pos - left.pos) / span;
+      const tAdj = remapUsingMidpoint(t, mid);
+      return +(left.alpha + (right.alpha - left.alpha) * tAdj).toFixed(4);
+    }
+  }
+  return as[0].alpha;
+}
+
+// ---------- Build CSS gradient string that matches preview logic ----------
+function buildGradientStopsForCss(){
+  const pts = gatherSamplePositions();
+  const rgbaStops = pts.map(pos => {
+    const color = sampleColorAt(pos);
+    const alpha = sampleAlphaAt(pos);
+    const rgb = hexToRgb(color);
+    return {pos, css: `rgba(${rgb.r},${rgb.g},${rgb.b},${+alpha.toFixed(3)})`};
+  });
+  return rgbaStops;
 }
 
 function cssBlendMap(bm){
-  // map some PS names to standard CSS mix-blend-mode where possible
-  const maps = {
-    'normal':'normal','multiply':'multiply','screen':'screen','overlay':'overlay','darken':'darken',
-    'lighten':'lighten','color-dodge':'','color dodge':'','soft light':'soft-light','hard light':'hard-light',
-    'difference':'difference','exclusion':'exclusion','hue':'hue','saturation':'saturation','color':'color','luminosity':'luminosity'
-  };
-  // try best effort: if contains space replace with hyphen
-  const key = bm.replace(/\s+/g,'-');
-  return maps[key] || key;
+  const map = {'normal':'normal','multiply':'multiply','screen':'screen','overlay':'overlay','darken':'darken','lighten':'lighten','soft light':'soft-light','hard light':'hard-light','difference':'difference','exclusion':'exclusion','hue':'hue','saturation':'saturation','color':'color','luminosity':'luminosity'};
+  const key = bm.replace(/\s+/g,' ').trim().toLowerCase();
+  return map[key] || key;
 }
 
-// generate CSS code
-function updateCSS(){
-  const st = [...stops].sort((a,b)=>a.pos-b.pos);
-  const rev = reverseCB.checked;
+// ---------- Build preview and CSS ----------
+function updatePreviewAndCss(){
+  // grab rgba stops
+  const rgbaStops = buildGradientStopsForCss();
+  const stopsCss = rgbaStops.map(s=> `${s.css} ${s.pos}%`).join(', ');
   const style = styleSel.value;
-  const angle = parseFloat(angleInput.value)||0;
-  const scale = parseFloat(scaleInput.value)||100;
+  const angle = +angleInput.value || 0;
+  const scale = +scaleRange.value || 100;
+  const rev = reverseCB.checked;
 
-  const stopsForCss = rev ? st.slice().reverse() : st;
-  const cssStops = stopsForCss.map(s => `${rgbaStr(s)} ${s.pos}%`).join(', ');
-
-  let gradientDecl = '';
-  switch(style){
-    case 'linear': gradientDecl = `linear-gradient(${angle}deg, ${cssStops})`; break;
-    case 'radial': gradientDecl = `radial-gradient(circle ${scale}%, ${cssStops})`; break;
-    case 'angle': gradientDecl = `conic-gradient(from ${angle}deg, ${cssStops})`; break;
-    case 'reflected': gradientDecl = `linear-gradient(${angle}deg, ${cssStops}, ${cssStops})`; break;
-    case 'diamond': gradientDecl = `radial-gradient(closest-side at center, ${cssStops})`; break;
+  // For CSS preview construction we may need mirrored sequences
+  let gradientCss = '';
+  if(style === 'linear'){
+    // linear uses angle directly. If reverse, reverse the stop order
+    const arr = rev ? [...rgbaStops].slice().reverse() : rgbaStops;
+    gradientCss = `linear-gradient(${angle}deg, ${arr.map(s=> s.css + ' ' + s.pos + '%').join(', ')})`;
+    overlay.style.transform = 'none';
+    overlay.style.transformOrigin = '50% 50%';
+  } else if(style === 'radial'){
+    // radial centered, simulate scale by scaling the overlay element
+    const arr = rev ? [...rgbaStops].slice().reverse() : rgbaStops;
+    gradientCss = `radial-gradient(circle at center, ${arr.map(s=> s.css + ' ' + s.pos + '%').join(', ')})`;
+    overlay.style.transform = `scale(${scale/100})`;
+    overlay.style.transformOrigin = '50% 50%';
+  } else if(style === 'angle'){
+    const arr = rev ? [...rgbaStops].slice().reverse() : rgbaStops;
+    gradientCss = `conic-gradient(from ${angle}deg at 50% 50%, ${arr.map(s=> s.css + ' ' + s.pos + '%').join(', ')})`;
+    overlay.style.transform = 'none';
+  } else if(style === 'reflected'){
+    // reflected: create mirrored sequence (left->right->left) approximated by concatenating stops then reversed stops
+    const base = rev ? [...rgbaStops].slice().reverse() : rgbaStops;
+    const mirrored = base.concat([...base].slice().reverse());
+    gradientCss = `linear-gradient(${angle}deg, ${mirrored.map(s=> s.css + ' ' + s.pos + '%').join(', ')})`;
+    overlay.style.transform = 'none';
+  } else if(style === 'diamond'){
+    // diamond approximation using radial with scale, and apply a diamond mask to overlay for diamond shape
+    const arr = rev ? [...rgbaStops].slice().reverse() : rgbaStops;
+    gradientCss = `radial-gradient(circle at center, ${arr.map(s=> s.css + ' ' + s.pos + '%').join(', ')})`;
+    overlay.style.transform = `scale(${scale/100})`;
+    overlay.style.transformOrigin = '50% 50%';
+  } else {
+    gradientCss = `linear-gradient(${angle}deg, ${stopsCss})`;
+    overlay.style.transform = 'none';
   }
 
-  const bm = blendMode.value.toLowerCase();
-  const mix = cssBlendMap(bm);
-  const op = (globalOpacity.value/100).toFixed(3);
-  const css = `/* Generated CSS (approx. to Photoshop Gradient Overlay) */
-background: ${gradientDecl};
+  // Apply gradient string to overlay as inline background
+  overlay.style.background = gradientCss;
+  overlay.style.backgroundRepeat = 'no-repeat';
+  overlay.style.backgroundPosition = alignCB.checked ? 'center center' : '0 0';
+
+  // Apply diamond mask if diamond style
+  if(style === 'diamond'){
+    // diamond mask using polygon: create a rotated square mask via clip-path
+    // Use clip-path to create diamond shape
+    overlay.style.clipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+  } else {
+    overlay.style.clipPath = 'none';
+  }
+
+  // mix-blend-mode and global opacity
+  const mix = cssBlendMap(blendMode.value);
+  overlay.style.mixBlendMode = mix;
+  overlay.style.opacity = (globalOpacityRange.value/100).toFixed(3);
+
+  // dither overlay in preview as a subtle top-layer element
+  // (we add visual noise by toggling a small overlay node)
+  // remove existing dither node
+  preview.querySelectorAll('.dither-layer').forEach(n=>n.remove());
+  if(ditherCB.checked){
+    const d = document.createElement('div');
+    d.className='dither-layer';
+    d.style.position='absolute'; d.style.inset='0'; d.style.pointerEvents='none';
+    d.style.backgroundImage='url(data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><filter id="n"><feTurbulence baseFrequency="0.8" numOctaves="1" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.02"/></svg>)';
+    d.style.mixBlendMode='multiply'; d.style.opacity='0.8';
+    preview.appendChild(d);
+  }
+
+  // If preview needs an underlying content to show blend modes, checker exists already.
+  // Compose CSS output (full)
+  const transformLine = (style === 'radial' || style === 'diamond') && (scale !== 100) ? `transform: scale(${(scale/100).toFixed(3)});` : '';
+  const cssText = `/* Generated CSS (Photoshop-like Gradient Overlay) */
+background: ${gradientCss};
 mix-blend-mode: ${mix};
-opacity: ${op};`;
-
-  cssCode.textContent = css;
+opacity: ${(globalOpacityRange.value/100).toFixed(3)};
+${transformLine}`;
+  cssOut.textContent = cssText;
 }
 
-function copyCSS(){
-  navigator.clipboard.writeText(cssCode.textContent).then(()=>alert('CSS copied to clipboard'));
+// ---------- Render helpers ----------
+function renderAll(){
+  renderStrip('color'); renderStrip('alpha');
+  syncSelectedPanel();
+  updatePreviewAndCss();
 }
 
-// helper events to re-render list & preview when stops change
-function renderAndKeepSelection(){
-  renderAll();
+// ---------- Selectors for initial state ----------
+state.selected = {rail:'color', type:'stop', id: state.colorStops[0]?.id || null};
+
+// ---------- Sync selected panel values when state changes ----------
+function syncSelectedPanel(){
+  const sel = state.selected;
+  if(sel.type === 'stop'){
+    if(sel.rail === 'color'){
+      const s = state.colorStops.find(x=>x.id===sel.id); if(!s) return;
+      selColor.disabled = false; selColor.value = s.color;
+      selColorPos.disabled = false; selColorPos.value = Math.round(s.pos);
+      selAlphaVal.disabled = true; selAlphaPos.disabled = true;
+      selMidColor.disabled = true; selMidAlpha.disabled = true;
+    } else {
+      const s = state.alphaStops.find(x=>x.id===sel.id); if(!s) return;
+      selAlphaVal.disabled = false; selAlphaVal.value = Math.round(s.alpha * 100);
+      selAlphaPos.disabled = false; selAlphaPos.value = Math.round(s.pos);
+      selColor.disabled = true; selColorPos.disabled = true;
+      selMidColor.disabled = true; selMidAlpha.disabled = true;
+    }
+  } else if(sel.type === 'mid'){
+    const key = sel.id;
+    if(sel.rail === 'color'){
+      selMidColor.disabled = false; selMidColor.value = +(state.colorMid[key] ?? 50);
+      selMidAlpha.disabled = true;
+      const parts = key.split('-'); const left = state.colorStops.find(s=>s.id===parts[0]) || {color:'#ffffff',pos:0};
+      selColor.disabled = true; selColor.value = left.color; selColorPos.disabled = true; selColorPos.value = Math.round(left.pos);
+      selAlphaVal.disabled = true; selAlphaPos.disabled = true;
+    } else {
+      selMidAlpha.disabled = false; selMidAlpha.value = +(state.alphaMid[key] ?? 50);
+      selMidColor.disabled = true;
+      const parts = key.split('-'); const left = state.alphaStops.find(s=>s.id===parts[0]) || {alpha:1,pos:0};
+      selAlphaVal.disabled = true; selAlphaVal.value = Math.round(left.alpha*100);
+      selAlphaPos.disabled = true; selAlphaPos.value = Math.round(left.pos);
+      selColor.disabled = true; selColorPos.disabled = true;
+    }
+  }
 }
 
-// whenever stops array changes we call this
-// initial wiring: whenever stops mutated we already call renderAll()
+// ---------- Wire selected input changes ----------
+selColor.addEventListener('input', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'color'){
+    const s = state.colorStops.find(x=>x.id === state.selected.id); if(s){ s.color = selColor.value; renderAll(); }
+  }
+});
+selColorPos.addEventListener('input', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'color'){
+    const v = clamp(+selColorPos.value,0,100); selColorPos.value = v;
+    const s = state.colorStops.find(x=>x.id === state.selected.id); if(s){ s.pos = +v; renderAll(); }
+  }
+});
+selAlphaVal.addEventListener('input', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'alpha'){
+    const v = clamp(+selAlphaVal.value,0,100); selAlphaVal.value = v;
+    const s = state.alphaStops.find(x=>x.id === state.selected.id); if(s){ s.alpha = +(v/100).toFixed(3); renderAll(); }
+  }
+});
+selAlphaPos.addEventListener('input', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'alpha'){
+    const v = clamp(+selAlphaPos.value,0,100); selAlphaPos.value = v;
+    const s = state.alphaStops.find(x=>x.id === state.selected.id); if(s){ s.pos = +v; renderAll(); }
+  }
+});
+selMidColor.addEventListener('input', ()=> {
+  if(state.selected.type === 'mid' && state.selected.rail === 'color'){
+    const k = state.selected.id; state.colorMid[k] = clamp(+selMidColor.value,0,100); renderAll();
+  }
+});
+selMidAlpha.addEventListener('input', ()=> {
+  if(state.selected.type === 'mid' && state.selected.rail === 'alpha'){
+    const k = state.selected.id; state.alphaMid[k] = clamp(+selMidAlpha.value,0,100); renderAll();
+  }
+});
 
-// small UX: if selected stop removed or not set, select first
-if(!selectedId && stops.length) selectedId = stops[0].id;
+// ---------- Remove handlers wired earlier through removeStop via buttons ----------
+deleteColorStopBtn.addEventListener('click', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'color') removeStop('color', state.selected.id);
+  else alert('Select a color stop to delete');
+});
+deleteAlphaStopBtn.addEventListener('click', ()=> {
+  if(state.selected.type === 'stop' && state.selected.rail === 'alpha') removeStop('alpha', state.selected.id);
+  else alert('Select an opacity stop to delete');
+});
+
+// ---------- Reset & copy ----------
+resetBtn.addEventListener('click', ()=> { resetState(); renderAll(); });
+copyBtn.addEventListener('click', ()=> {
+  navigator.clipboard.writeText(cssOut.textContent).then(()=> alert('Full CSS copied to clipboard'));
+});
+
+// ---------- Initialize selection and first render ----------
+if(!state.selected.id){
+  state.selected = {rail:'color', type:'stop', id: state.colorStops[0].id};
+}
 renderAll();
+
+// allow clicking outside handles to clear selection? Keep last selection for ease; add strip backdrop click to select nearest stop
+document.addEventListener('click', (e) => {
+  // clicking empty space clears midpoint selection but keeps stop selection—no forced clearing
+});
+
+// prevent accidental selection/drag issues
+['pointerdown','pointermove','pointerup'].forEach(ev => document.addEventListener(ev, () => {}, {passive:true}));
 
 </script>
 </body>
